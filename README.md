@@ -89,15 +89,15 @@ where:
 ---
 
 ## Model Output Summary (abridged)
-| Coefficients: |-|-|-|-|
-|-| Estimate | Std. Error | z value | Pr(>`|z|`) |
-| (Intercept) | -12.58458 | 0.68412 | -18.396 | < 2e-16 *** |
-| kg_groupT | 0.23417 | 0.10987 | 2.131 | 0.03308 * |
-| kg_subgroup1s | -0.92434 | 0.18214 | -5.075 | 3.87e-07 *** |
-| kg_subgroup1m | 0.50338 | 0.17865 | 2.818 | 0.00483 ** |
-| avg_humidity | 0.03439 | 0.00729 | 4.718 | 2.38e-06 *** |
-| avg_wind_kph | 0.12760 | 0.02384 | 5.352 | 8.70e-08 *** |
-| avg_gust_mph | -0.13990 | 0.04214 | -3.320 | 0.00090 *** |
+| Coefficients | Estimate | Std. Error | z value | Pr(>\|z\|) |
+|--------------|----------|------------|---------|-------------|
+| (Intercept)  | -12.58458 | 0.68412    | -18.396 | < 2e-16 *** |
+| kg_groupT    | 0.23417   | 0.10987    | 2.131   | 0.03308 *   |
+| kg_subgroup1s | -0.92434 | 0.18214    | -5.075  | 3.87e-07 *** |
+| kg_subgroup1m | 0.50338  | 0.17865    | 2.818   | 0.00483 **  |
+| avg_humidity | 0.03439   | 0.00729    | 4.718   | 2.38e-06 *** |
+| avg_wind_kph | 0.12760   | 0.02384    | 5.352   | 8.70e-08 *** |
+| avg_gust_mph | -0.13990  | 0.04214    | -3.320  | 0.00090 *** |
 
 
 # Poisson Regression Lecture – Key Sections
