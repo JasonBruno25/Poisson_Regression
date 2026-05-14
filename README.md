@@ -160,10 +160,10 @@ poisson-regression-lecture/
 ├── poisson_regression_lecture.html  # Rendered slides (HTML)
 ├── README.md                        # This file
 ├── img/
-    ├── clouds.jpg                   # Images used in slides
-    ├── image.png
-    ├── koppenmap.jpg                # Images used in slides
-    └── vt_logo.png                  # Virginia Tech logo for slides
+│   ├── clouds.jpg                   # Images used in slides
+│   ├── image.png
+│   ├── koppenmap.jpg                # Images used in slides
+│   └── vt_logo.png                  # Virginia Tech logo for slides
 └── data/
     ├── weekly_weather_data.csv      # Aggregated weekly data (example)
     └── capital_cities_weather.csv   # Raw daily data (if shareable)
