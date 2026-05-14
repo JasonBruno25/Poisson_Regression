@@ -165,6 +165,5 @@ poisson-regression-lecture/
   - koppenmap.jpg                # Images used in slides
   - vt_logo.png                  # Virginia Tech logo for slides
 - data/
-  - weekly_weather_data.csv      # Aggregated weekly data (example)
-  - capital_cities_weather.csv   # Raw daily data (if shareable)
+  - weather_data.csv      # Aggregated weekly data
 
