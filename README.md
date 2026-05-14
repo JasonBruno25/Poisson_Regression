@@ -155,16 +155,16 @@ This demonstrates how offsets adjust for different observation windows (time, ar
 ## Repository Structure
 
 poisson-regression-lecture/
-├── poisson_regression_lecture.Rmd   # R Markdown source (Beamer)
-├── poisson_regression_lecture.pdf   # Rendered slides (PDF)
-├── poisson_regression_lecture.html  # Rendered slides (HTML)
-├── README.md                        # This file
-├── img/
-│   ├── clouds.jpg                   # Images used in slides
-│   ├── image.png
-│   ├── koppenmap.jpg                # Images used in slides
-│   └── vt_logo.png                  # Virginia Tech logo for slides
-└── data/
-    ├── weekly_weather_data.csv      # Aggregated weekly data (example)
-    └── capital_cities_weather.csv   # Raw daily data (if shareable)
+- poisson_regression_lecture.Rmd   # R Markdown source (Beamer)
+- poisson_regression_lecture.pdf   # Rendered slides (PDF)
+- poisson_regression_lecture.html  # Rendered slides (HTML)
+- README.md                        # This file
+- img/
+  - clouds.jpg                   # Images used in slides
+  - image.png
+  - koppenmap.jpg                # Images used in slides
+  - vt_logo.png                  # Virginia Tech logo for slides
+- data/
+  - weekly_weather_data.csv      # Aggregated weekly data (example)
+  - capital_cities_weather.csv   # Raw daily data (if shareable)
 
