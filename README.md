@@ -161,7 +161,6 @@ poisson-regression-lecture/
 - README.md                        # This file
 - img/
   - clouds.jpg                   # Images used in slides
-  - image.png
   - koppenmap.jpg                # Images used in slides
   - vt_logo.png                  # Virginia Tech logo for slides
 - data/
