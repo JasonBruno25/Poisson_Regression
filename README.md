@@ -155,9 +155,8 @@ This demonstrates how offsets adjust for different observation windows (time, ar
 ## Repository Structure
 
 poisson-regression-lecture/
-- poisson_regression_lecture.Rmd   # R Markdown source (Beamer)
-- poisson_regression_lecture.pdf   # Rendered slides (PDF)
-- poisson_regression_lecture.html  # Rendered slides (HTML)
+- Project_2_Group_01.Rmd   # R Markdown source (Beamer)
+- Project_2_Group_01.pdf   # Rendered slides (PDF)
 - README.md                        # This file
 - img/
   - clouds.jpg                   # Images used in slides
