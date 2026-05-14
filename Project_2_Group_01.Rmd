@@ -1,0 +1,604 @@
+---
+title: "Poisson Regression"
+author: "Bruno Terceros, Jason \n\n Desai, Rishab \n\n Levy, Jordan \n\n Williams, Nate"
+date: "2025-04-22"
+fontsize: 9pt
+classoption: "aspectratio=169"
+output: 
+  beamer_presentation: 
+    fonttheme: professionalfonts
+    highlight: kate
+    theme: Rochester
+    latex_engine: xelatex
+header-includes:
+- \definecolor{VTmaroon}{HTML}{861F41}
+- \usecolortheme[named=VTmaroon]{structure}
+- \usepackage{graphicx}
+- \usepackage[absolute,overlay]{textpos}
+- \setbeamertemplate{background}
+  {
+      \begin{textblock*}{3cm}(14cm,0cm)
+        \includegraphics[width=2cm]{vt_logo.png}
+      \end{textblock*}
+      \begin{textblock*}{\paperwidth}(0.2cm,\paperheight-0.4cm)
+        \footnotesize\color{VTmaroon}{CMDA 4654 - Spring 2025}
+      \end{textblock*}
+      \begin{textblock*}{\paperwidth}(\paperwidth-1.5cm,\paperheight-0.4cm)
+        \footnotesize\color{VTmaroon}{Prof. Lucero}
+      \end{textblock*}
+    }
+- \usepackage{graphicx}
+- \usepackage{multicol}
+- \usepackage{amsmath}
+- \usepackage{fontspec}
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+# include all libraries here for better code management
+library(knitr)
+library(glm2)
+library(dplyr)
+library(xaringanthemer)
+data(crabs)
+data(InsectSprays)
+
+# will come back
+
+
+# Although you can call functions from a library using the following notation
+#  without loading the entire library.
+knitr::opts_chunk$set(
+                      echo = FALSE, 
+                      comment = NA, 
+                      message = FALSE, # Turn off load messages
+                      warning = FALSE # Turn off warnings
+                      )
+
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) 
+  {
+  x <- def.chunk.hook(x, options)
+  paste0("\n \\", "footnotesize","\n\n", x, "\n\n \\normalsize")
+})
+
+
+```
+
+## Agenda
+
+\begin{itemize}
+  \item What is Poisson Regression?
+  \item Why do we need it?
+  \item Poisson Theory (PMF, CDF)
+  \item Baby Example: Crabs
+  \item Baby Example: Insect Sprays
+  \item Real-World Application: Weather
+  \item Poisson for Rates and Exposure
+  \item Summary and Key Takeaways
+\end{itemize}
+
+
+## Introduction
+
+Poisson regression is a type of generalized linear model used to model count data, where the response variable follows a Poisson distribution and represents the number of times an event occurs in a fixed interval of time or space.
+
+Examples:
+
+- Hourly customer arrivals at a store
+- Typos on a page
+- Defects in a batch of products
+
+
+
+## Motivation
+
+Traditional linear regression fails at modeling count data for the following reasons:
+
+- Count outcomes are non-negative integers, which are often right-skewed and violate assumptions of normality
+- Linear models' predicted values can be negative, which doesn't make sense for count data
+- Linear regression does not account for overdispersion (variance exceeds mean)
+
+Poisson regression addresses these limitations by assuming that:
+\( Y_i \sim \text{Poisson}(\lambda_i), \quad \text{where } \lambda_i > 0 \)
+
+## Use Cases
+
+Poisson regression is suitable for count data as well as rate data, where a rate refers to the number of events per unit of time, space, or population.
+
+
+## Assumptions
+
+- Count outcomes are non-negative integers
+- Mean is equal to variance
+- Events are independent
+- The log of the mean rate must be a linear function of x
+
+
+## Limitations
+
+\begin{table}[h]
+\centering
+\footnotesize
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{Assumption} & \textbf{Description} \\
+\hline
+Non-negative integers & The response variable must be count data (0, 1, 2, ...) \\
+\hline
+Mean = Variance (Equidispersion) & Variability in the data should match the average count \\
+\hline
+Independence & Each observation/event is assumed to occur independently of others \\
+\hline
+Log link function & The log of the expected count must be linear in the predictors \\
+\hline
+\end{tabular}
+\caption{Key assumptions of Poisson regression}
+\end{table}
+
+- Assumes equidispersion, i.e., mean is equal to variance, which is not common in real-world data
+- Does not perform well with excess zero data points
+
+
+
+
+## A Review on Poisson
+
+The Poisson distribution is a discrete probability distribution that expresses the likelihood of a given number of events occurring in a fixed interval of time, space, or observation window, **assuming a known constant mean rate** \(\lambda\) and independence between events.
+
+It is defined by the **Probability Mass Function (PMF)**:
+
+\[
+P(X = k) = \frac{e^{-\lambda} \lambda^k}{k!}, \quad k = 0, 1, 2, \dots
+\]
+
+- Here, \(\lambda\) is both the **mean** and **variance** of the distribution:  
+  \[
+  E[X] = \lambda, \quad \text{Var}(X) = \lambda
+  \]
+
+The **Cumulative Distribution Function (CDF)** gives the probability that the count is less than or equal to a particular value \(k\):
+
+\[
+P(X \leq k) = e^{-\lambda} \sum_{j=0}^{k} \frac{\lambda^j}{j!}
+\]
+
+
+## Visualizing the Poisson Distribution
+
+```{r Visualiztion of Poisson, fig.height=4, fig.width=8, echo = FALSE}
+
+# make data for k from 0 to 20
+k <- 0:20
+
+# chosen lambdas
+lambdas <- c(1, 4, 10)
+
+# since on the same chart we can adjust the layout
+par(mfrow = c(1, 2))
+
+# PMF (Probability Mass Function) plot
+plot(k, dpois(k, lambda = lambdas[1]), 
+     type = "blank", lwd = 1, col = "blue", pch = 16,
+     ylim = c(0, 0.4), main = "Poisson PMF", 
+     ylab = "P(Y = k)", xlab = "k")
+
+lines(k, dpois(k, lambda = lambdas[2]), type = "blank", col = "darkgreen", lwd = 1, pch = 15)
+lines(k, dpois(k, lambda = lambdas[3]), type = "blank", col = "red", lwd = 1, pch = 17)
+
+legend("topright", legend = paste("lambda =", lambdas), 
+       col = c("blue", "darkgreen", "red"), 
+       pch = c(16, 15, 17), lwd = 1)
+
+
+# CDF (Cumulative Distribution Function) plot
+plot(k, ppois(k, lambda = lambdas[1]), 
+      type = "s", lwd = 2, col = "blue", 
+      ylim = c(0, 1), main = "Poisson CDF", 
+     ylab = "P(Y <= k)", xlab = "k")
+     
+lines(k, ppois(k, lambda = lambdas[2]), type = "s", col = "darkgreen", lwd = 2)
+lines(k, ppois(k, lambda = lambdas[3]), type = "s", col = "red", lwd = 2)
+
+# circle points
+points(k, ppois(k, lambda = lambdas[1]), col = "blue", pch = 16, cex = 1.2)
+points(k, ppois(k, lambda = lambdas[2]), col = "darkgreen", pch = 15, cex = 1.2)
+points(k, ppois(k, lambda = lambdas[3]), col = "red", pch = 17, cex = 1.2)
+
+legend("bottomright", legend = paste("lamdba =", lambdas), 
+       col = c("blue", "darkgreen", "red"), 
+       pch = c(16, 15, 17), lwd = 1)
+
+
+```
+
+## Interpreting the PMF and CDF Graphs
+
+\begin{columns}
+\column{0.48\textwidth}
+\small
+
+\textbf{PMF: Probability Mass Function}
+
+\begin{itemize}
+  \item The \textbf{PMF} shows the probability of observing exactly \(k\) events.
+  \item Smaller \(\lambda\) values concentrate mass near 0 (e.g., rare events).
+  \item Larger \(\lambda\) values spread the distribution and approach a bell shape.
+\end{itemize}
+
+\column{0.48\textwidth}
+\small
+
+\textbf{CDF: Cumulative Distribution Function}
+
+\begin{itemize}
+  \item The \textbf{CDF} shows the cumulative probability \(P(Y \leq k)\).
+  \item It rises faster as \(\lambda\) increases.
+  \item Helps visualize the \textbf{likelihood of not exceeding a certain number of events}.
+\end{itemize}
+
+\end{columns}
+
+\vspace{1em}
+
+These plots give intuition into how count data behaves before applying any model — and help us understand **why a log-linear approach is needed** in Poisson regression.
+
+
+
+
+## Poisson Regression
+
+Poisson regression extends the Poisson distribution by using predictors to estimate log($\lambda$~i~):
+
+\[
+\log(\lambda_i) = \beta_0 + \beta_1 x_i
+\]
+
+This implies:
+
+\[
+\lambda_i = \exp\left( \beta_0 + \beta_1 x_i \right)
+\]
+
+## Interpretation of Coefficients
+
+Let us compute the predicted values of $\lambda$~i~ at *x*~1~ and *x*~2~ for a single-regressor model:
+\[
+\log(\lambda_1) = \beta_0 + \beta_1 x_1
+\]
+\[
+\log(\lambda_2) = \beta_0 + \beta_1 x_2
+\]
+
+By subtracting our first term from the second, we obtain:
+\[
+\log(\lambda_2) - \log(\lambda_1) = \beta_1(x_2 - x_1)
+\]
+
+Now, consider two values of *x* such that *x*~2~ = *x*~1~ + 1. When we plug this in, we find that:
+\[
+\log(\lambda_2) - \log(\lambda_1) = \beta_1
+\]
+
+Thus, the model's coefficient can be interpreted as the increase in the logarithm of the count of the outcome variable given an increase of 1 in the independent variable. In other words, a change in *x* has a multiplicative effect on $\lambda$.
+
+## Application
+
+The `crabs` dataset in the glm2 package contains observations on horseshoe crabs' physical traits and mating patterns.
+```{r}
+head(crabs) %>% kable()
+```
+
+Let us use this dataset to build a simple Poisson regression model with Width as the independent variable and Satellites as the response variable to answer, how does the width of a female crab affect her expected number of satellites?
+
+## Application
+
+We can achieve this using the `glm()` function with Satellites as a function of Width and family set to `"Poisson"`:
+```{r}
+model <- glm(Satellites ~ Width, data=crabs, family="poisson")
+summary(model)
+```
+
+
+## Fitted Model
+
+Thus, we have our model:
+\[
+\lambda_i = \exp\left( -3.30476 + 0.16405 x_i \right)
+\]
+
+Note that E[X] does not have to be an integer.
+
+## Fitted Values
+```{r fig.align='center'}
+model <- glm(Satellites ~ Width, data=crabs, family="poisson")
+plot(crabs$Width, crabs$Satellites, pch=16, col="black")
+points(crabs$Width, model$fitted.values, col="green", type="p", lwd=3)
+```
+
+
+## Another Example: InsectSpray Data
+
+The *InsectSprays* data set contains the number of insects in agricultural plots treated with different types of insecticides. This is a classic example of modeling environmental or agricultural data using Poisson regression.
+
+We will model the number of insects killed using Poisson regression.
+Our goal: **Estimate and compare the effectiveness of different spray types** in reducing insect populations.
+
+## Exploring InsectSprays
+
+```{r InsectSprays head, echo=TRUE}
+
+head(InsectSprays) %>% kable()
+```
+
+\begin{itemize}
+  \item *count*: Number of insects in a plot (response variable).
+  \item *spray*: Factor variable indicating the spray type (A-F).
+\end{itemize}
+
+```{r InsectSprays tail, echo=TRUE}
+
+tail(InsectSprays) %>% kable()
+```
+
+## Visualizing Spray Effects
+
+```{r fig.align='center'}
+
+boxplot(count ~ spray, data = InsectSprays,
+        main = "Effect of Insect Sprays",
+        xlab = "Spray Type", ylab = "Insect Count")
+
+```
+
+## Insect Observations from Boxplot
+
+Given the boxplot in the previous slide:
+\begin{itemize}
+  \item Spray C, D, and E: Clearly show they are the most effective (lowest insect count across all other observations).
+  \item Spray A and B: Similar distributions where B has a higher \textbf{median} but also more consistency.
+  \item Spray F: Has the \textbf{highest variability} and \textbf{highest maxmimum counts} but also the highest. \textbf{median}.
+\end{itemize}
+
+
+```{r Mean Tables, echo=TRUE}
+aggregate(count ~ spray, data = InsectSprays, FUN = mean) %>% kable()
+```
+
+
+## Insect Model
+
+```{r Modeling our Insects}
+
+insect_model <- glm(count ~ spray, data = InsectSprays, family = poisson)
+summary(insect_model)
+
+```
+
+
+## dpois() and ppois()
+
+We have these two functions in our arsenal — what are they, and how can we use them?
+
+\textbf{dpois(k, $\lambda$)}: Gives the \textit{probability} of observing exactly \(k\) events when the expected count is \(\lambda\)
+
+\textbf{ppois(k, $\lambda$)}: Provides the \textit{cumulative probability} \(P(X \leq k)\)
+
+## Applying These Functions to InsectSpray
+We will examine \textbf{Spray A} (our baseline group) for our functions. We estimate the \textbf{expected number of insects} to be $\lambda_A$
+
+## Step-by-Step Example
+
+1. Calculate mean count (which we did) for Spray A
+```{r Get LambdaA, echo=TRUE}
+lambda_A <- mean(InsectSprays$count[InsectSprays$spray == "A"]) # we got 14.50
+```
+
+2. Ask the question: What is the probability of getting exactly 10 insects in a plot?
+```{r Find when X is 10, echo=TRUE}
+dpois(10, lambda = lambda_A) # Looking for P(X = 10)
+```
+
+3. Question: What is the chance we happen to see 10 or fewer insects in our data?
+```{r Find when X is less than 10, echo=TRUE}
+ppois(10, lambda = lambda_A) # Looking for P(X <= 10)
+```
+
+These help us understand:
+\begin{itemize}
+  \item How likely a certain outcome is, \textbf{given our Poisson model}
+  \item Why Poisson regression is ideal for count-based outcomes
+\end{itemize} 
+
+
+## Poisson Regression for Rate Data
+
+Poisson regression is also suitable for rate data, in which a rate refers to a count of events divided by a fixed interval of space or time, known as *exposure*. In Poisson regression, this is handled with an *offset*.
+
+
+## Exposure and Offset
+
+Let us define a given rate as:
+\[
+\text{Rate}_i = \frac{\lambda_i}{\mathrm{exposure}_i}
+\]
+
+To model rates, we rewrite the log-linear model as:
+
+\[
+\log\left(\frac{\lambda_i}{\mathrm{exposure}_i}\right) = \beta_0 + \beta_1 x_{i1} + \dots + \beta_p x_{ik}
+\]
+
+This is equivalent to:
+
+\[
+\log(\lambda_i) = \beta_0 + \beta_1 x_{i1} + \dots + \beta_k x_{ik} + \log(\mathrm{exposure}_i)
+\]
+
+Where the added term, log(exposure~i~), refers to the model's **offset**.
+
+## Simulated Disease Data Setup
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results='hold'}
+# Simulate realistic data
+set.seed(123)
+n <- 100
+region <- paste0("Region_", 1:n)
+population <- round(runif(n, 1000, 10000))  # exposure variable
+pollution <- runif(n, 0, 1)  # continuous predictor
+cases <- rpois(n, lambda = exp(1 + 0.8 * pollution + log(population)))  # count outcome
+
+# Create data frame
+df <- data.frame(region, population, pollution, cases)
+head(df) %>% kable()
+```
+
+## Naive Model
+```{r echo=TRUE}
+model_naive <- glm(cases ~ pollution, family = poisson, data = df)
+summary(model_naive)
+```
+
+## Offset Model Using log(population) to Account for Exposure
+```{r echo=TRUE}
+model_offset <- glm(cases ~ pollution + offset(log(population)), family = poisson, data = df)
+summary(model_offset)
+```
+
+
+## Predictions
+Here, we compare predictions. The offset model corrects for population differences.
+```{r}
+df$fitted_naive <- fitted(model_naive)
+df$fitted_offset <- fitted(model_offset)
+head(df[, c("region", "fitted_naive", "fitted_offset")]) %>% kable()
+```
+
+- The naive model ignores exposure, treating all regions as if they have the same population size, producing biased estimates
+- By using population as an offset and adjusting for exposure, we can more accurately estimate the rate of cases per person
+
+## Fitted Values
+```{r fig.align='center'}
+plot(df$fitted_naive, df$fitted_offset, pch=16, col="black")
+abline(0, 1)
+```
+
+## Interpretation
+- The scatterplot shows that the two models give different results. The offset model adjusts for exposure, so its predictions often shift below the naive ones.
+- Population is the exposure. Larger populations naturally have more cases.
+- The naive model fails to account for exposure differences. Using an offset in the model adjusts for this and models case rates, leading to more accurate interpretation of the effect of pollution on disease occurrence.
+
+## Using Poisson Regression for Weather Data: Predicting Cloudy Days in a Week
+
+We used a data set that contained daily weather data from a diverse set of capital cities throughout the world to predict how many "cloudy days" are in a week's worth of data.
+
+Useful for:
+
+- Solar Energy
+- Tourism
+- Film, TV, Photography
+
+\begin{center}
+\includegraphics[width=7cm]{clouds.jpg}
+\end{center}
+
+## Dataset
+
+- 60,000 daily weather records
+- Data from 248 Capital cities from around the world
+- From August 2023 to today
+
+- Key Features:
+  - `temperature_fahrenheit`: Air temperature (°F) — affects saturation and cloud formation 
+  - `humidity`: Relative humidity (%) — higher humidity increases the likelihood of cloud formation  
+  - `pressure_in`: Atmospheric pressure (inHg) — lower pressure systems often support rising air and cloud development  
+  - `wind_mph`: Wind speed (mph) — included as an alternate unit for interpretability
+  
+
+## Feature Engineering: Koppen Climate Classification
+
+We needed a way to take climate into account without using the exact location to prevent over fitting, so we matched each location to their Koppen Climate Classification and joined it to the dataset to encode long term climate patterns.
+
+
+\begin{center}
+\includegraphics[width=10cm]{koppenmap.jpg}
+\end{center}
+
+## Building the dataset for Poisson Regression
+
+We went through every week in the dataset and counted how many cloudy days (coverage == 100) were in that week and averaged important features for predicting cloudy days.
+
+```
+weekly_data <- df2 %>%
+  group_by(year, week, 
+           kg_group, kg_subgroup1, kg_subgroup2) %>%
+  summarise(
+    CloudyCount   = sum(cloud == 100, na.rm = TRUE),
+    avg_temp_f    = mean(temperature_fahrenheit, na.rm = TRUE),
+    avg_humidity  = mean(humidity,            na.rm = TRUE),
+    avg_pressure  = mean(pressure_in,         na.rm = TRUE),
+    avg_wind_kph  = mean(wind_kph,            na.rm = TRUE),
+    .groups       = "drop"
+  )
+```
+
+## Using GLM for Poisson Regression
+
+We used the **GLM function** to run Poisson Regression on the data.
+
+```
+model_weekly_pois <- glm(
+  CloudyCount ~ 
+    kg_group   + 
+    kg_subgroup1 + 
+    ...,
+  data   = weekly_data,
+  family = poisson(link = "log")
+)
+```
+```
+Null deviance: 2227.7 on 875 degrees of freedom
+Residual deviance: 1210.6 on 859 degrees of freedom
+```
+
+**45.7%** of the variation in cloudy-day counts is explained by our model!
+
+Our **dispersion ratio was 1.23** which means the variance was slightly larger than the mean which is not ideal for Poisson, but still statistically valid.
+
+## Poisson Coefficents
+\[
+\lambda_i = \exp\left( -12.584576 + -0.929033 x_i + ... \right)
+\]
+
+- Top Coefficents:
+  - `avg_humidity`: +3.5% cloudy days per +1% RH  
+  - `avg_wind_kph`: +13.6% per +1 km/h  
+  - `avg_gust_mph`: –13% per +1 mph  
+  - `kg_subgroup1s` (dry-summer): ~60% fewer cloudy days  
+  - `kg_subgroup1m` (monsoon): ~66% more cloudy days
+  
+  
+  
+## Key Takeaways
+
+- Poisson regression is designed for count data  
+- Use it when data are integers \(\ge 0 \) and variance \( = \) mean
+
+- We saw 4 examples:
+  - Biological (crabs & mates)
+  - Agricultural (insecticide effects)
+  - Epidemiology (disease spread)
+  - Environmental (cloudy days across climates)
+- Offsets allow rate-based modeling  
+- Tools like `dpois()` and `ppois()` tie theory to real-world data
+
+## 
+
+\begin{center}
+\Huge\textit{Fin}
+\end{center}
+
+  
+
+
+
